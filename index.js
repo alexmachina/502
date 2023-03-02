@@ -1,26 +1,24 @@
-const http = require("http");
-const notifier = require("node-notifier");
+import notifier from "node-notifier";
+import fetch from "node-fetch";
 
-const jiraUrl = "";
+const jiraUrl = "http://localhost:3000/api/jira";
+const intervalInMinutes = 5;
 
-http
-  .get(jiraUrl, (res) => {
-    let data = [];
+checkJira();
+setInterval(checkJira, toMs(intervalInMinutes));
 
-    res.on("data", (chunk) => {
-      data.push(chunk);
+async function checkJira() {
+  const response = await fetch(jiraUrl);
+  const status = response.status;
+  console.log(status);
+  if (status > 400) {
+    notifier.notify({
+      title: "Jira is down",
+      message: "Status Code " + status,
     });
+  }
+}
 
-    res.on("end", () => {
-      console.log("Status Code:", res.statusCode);
-      if (res.statusCode > 400) {
-        notifier.notify({
-          title: "Jira is Down",
-          message: "Erro " + res.statusCode,
-        });
-      }
-    });
-  })
-  .on("error", (err) => {
-    console.log("Error: ", err.message);
-  });
+function toMs(minutes) {
+  return minutes * 60 * 1000;
+}
